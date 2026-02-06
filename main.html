@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Battle Arena - 动物斗兽场</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #startScreen {
+            text-align: center;
+            background: white;
+            padding: 60px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border: 3px solid #4a90e2;
+        }
+        
+        h1 {
+            font-size: 48px;
+            background: linear-gradient(45deg, #4a90e2, #ff69b4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(90deg, #4a90e2, #7b68ee);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+            margin: 10px;
+        }
+        
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3); }
+        .btn.secondary { background: linear-gradient(90deg, #95a5a6, #7f8c8d); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        
+        #shopScreen {
+            display: none;
+            width: 95%;
+            height: 95%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        #shopHeader {
+            background: linear-gradient(90deg, #4a90e2, #ff69b4);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-box {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        #shopContent { display: flex; flex: 1; overflow: hidden; }
+        
+        #animalGrid {
+            flex: 2;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .animal-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100px;
+        }
+        
+        .animal-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #4a90e2; }
+        .animal-card.disabled { opacity: 0.5; cursor: not-allowed; background: #f0f0f0; }
+        
+        .animal-card .emoji { font-size: 28px; display: block; margin-bottom: 2px; }
+        .animal-card .name { font-size: 12px; font-weight: bold; color: #333; margin-bottom: 1px; }
+        .animal-card .tier { font-size: 10px; color: #666; margin: 1px 0; }
+        
+        .card-info {
+            margin-top: 3px;
+            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            width: 100%;
+            align-items: center;
+        }
+        
+        .range-badge {
+            background: #9b59b6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .skill-tag-mini {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            max-width: 95px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: help;
+        }
+        
+        #armyPanel {
+            flex: 1;
+            background: #fff0f5;
+            padding: 15px;
+            border-left: 3px solid #ff69b4;
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .deploy-buttons { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        .deploy-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #4a90e2;
+            color: white;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .deploy-btn:hover { transform: translateY(-2px); }
+        .deploy-btn.active { background: #ff69b4; box-shadow: 0 4px 8px rgba(255,105,180,0.3); }
+        
+        #armyStack { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; flex: 1; }
+        
+        .stack-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .stack-item:hover { border-color: #ff69b4; transform: translateX(-5px); }
+        
+        .stack-emoji { font-size: 24px; width: 40px; text-align: center; }
+        .stack-info { flex: 1; text-align: left; }
+        .stack-name { font-size: 13px; font-weight: bold; }
+        .stack-count { font-size: 16px; color: #e74c3c; font-weight: bold; margin-left: auto; padding: 0 10px; }
+        
+        .skill-intro {
+            position: fixed;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1001;
+            display: none;
+            max-width: 280px;
+            border: 2px solid #ff69b4;
+            line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        
+        #deployScreen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 40%, #90EE90 100%);
+            flex-direction: column;
+        }
+        
+        #deployCanvas { flex: 1; width: 100%; cursor: crosshair; }
+        
+        .deploy-header {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .deploy-controls-top {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .deploy-controls-top .btn { padding: 8px 20px; font-size: 14px; margin: 0; }
+        
+        .deploy-panel {
+            height: 160px;
+            background: rgba(255,255,255,0.95);
+            border-top: 3px solid #4a90e2;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 0 5px;
+        }
+        
+        .panel-title { font-weight: bold; color: #333; font-size: 14px; }
+        
+        .panel-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .panel-stats span { background: #f0f0f0; padding: 3px 10px; border-radius: 10px; }
+        
+        .animals-pool {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 5px;
+            flex: 1;
+            align-items: center;
+        }
+        
+        .pool-item {
+            min-width: 70px;
+            height: 90px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            padding: 5px;
+        }
+        
+        .pool-item:hover { border-color: #4a90e2; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .pool-item.selected { border-color: #ff69b4; background: #ffe6f0; box-shadow: 0 0 15px rgba(255,105,180,0.5); transform: scale(1.05); }
+        .pool-item .emoji { font-size: 32px; margin-bottom: 2px; }
+        .pool-item .count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pool-item .range { font-size: 10px; color: #9b59b6; font-weight: bold; }
+        .pool-item .skill-mini {
+            font-size: 9px;
+            color: #666;
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+        
+        .cursor-animal {
+            position: fixed;
+            pointer-events: none;
+            font-size: 45px;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            filter: drop-shadow(0 0 15px rgba(255,105,180,0.9));
+            display: none;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+        
+        .deploy-hint {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        
+        .empty-hint {
+            position: absolute;
+            top: 40%;
+            left: 25%;
+            transform: translate(-50%, -50%);
+            color: rgba(0,0,0,0.3);
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            pointer-events: none;
+        }
+        
+        #battleScreen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 40%, #90EE90 100%);
+        }
+        
+        #battleCanvas { width: 100%; height: 100%; display: block; }
+        
+        #battleUI {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 40px;
+            border: 2px solid #4a90e2;
+            z-index: 10;
+        }
+        
+        .team-stat { display: flex; align-items: center; gap: 10px; }
+        .left-team { color: #27ae60; }
+        .right-team { color: #e74c3c; }
+        
+        #timerDisplay {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        #resultScreen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            z-index: 100;
+        }
+        
+        .result-title { font-size: 72px; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); animation: bounce 1s ease infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .result-sub { font-size: 28px; margin-bottom: 40px; opacity: 0.9; }
+        
+        .money-tier {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .tier-poor { background: #7f8c8d; color: white; }
+        .tier-normal { background: #3498db; color: white; }
+        .tier-rich { background: #f1c40f; color: #333; }
+        .tier-tycoon { background: #e74c3c; color: white; border: 2px solid gold; }
+        
+        .buying-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10000;
+        }
+        .buying-hint.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startScreen">
+            <h1>⚔️ Emoji Battle Arena</h1>
+            <p style="font-size: 18px; color: #666; margin-bottom: 30px;">收集动物 · 组建军团 · 策略对战</p>
+            <button class="btn" onclick="game.startNewGame()">🎮 开始新游戏</button>
+        </div>
+
+        <div id="shopScreen">
+            <div id="shopHeader">
+                <div>
+                    <span style="font-size: 20px; font-weight: bold;">🛒 动物商店</span>
+                    <span id="moneyTier" class="money-tier"></span>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="stat-box">💰 <span id="moneyDisplay">0</span></div>
+                    <div class="stat-box">⚔️ <span id="armyCount">0</span>/100</div>
+                </div>
+            </div>
+            <div id="shopContent">
+                <div id="animalGrid"></div>
+                <div id="armyPanel">
+                    <div class="deploy-buttons">
+                        <button class="deploy-btn active" onclick="game.setDeployMode('auto')" id="btnAuto">自动部署</button>
+                        <button class="deploy-btn" onclick="game.setDeployMode('manual')" id="btnManual">手动部署</button>
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 10px; text-align: center;">
+                        点击左侧购买<br>下方查看已购买动物
+                    </div>
+                    <div id="armyStack"></div>
+                    <button class="btn" onclick="game.startBattle()" style="margin-top: 10px; padding: 12px; font-size: 16px; width: 100%;">开始战斗</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="deployScreen">
+            <div class="deploy-header">
+                <div>🎮 手动部署模式</div>
+                <div style="font-size: 13px; color: #666; margin-top: 3px;">点击下方动物选择，在左侧战场点击放置</div>
+            </div>
+            
+            <div class="deploy-controls-top">
+                <button class="btn secondary" onclick="game.clearDeploy()">🗑️ 清空</button>
+                <button class="btn" onclick="game.backToShop()">↩️ 返回</button>
+                <button class="btn" onclick="game.startBattle()" id="btnStartBattle" disabled>⚔️ 开始战斗</button>
+            </div>
+            
+            <div class="deploy-hint" id="deployHint">点击下方选择动物，在左侧区域点击放置</div>
+            <div class="empty-hint" id="emptyHint">请在下方选择动物后<br>在左侧战场区域点击放置</div>
+            
+            <canvas id="deployCanvas"></canvas>
+            
+            <div class="deploy-panel">
+                <div class="panel-header">
+                    <div class="panel-title">🎒 选择要部署的动物（点击选择，再点击战场放置）</div>
+                    <div class="panel-stats">
+                        <span>已放置: <b id="placedCount">0</b></span>
+                        <span>待部署: <b id="remainingCount">0</b></span>
+                    </div>
+                </div>
+                <div class="animals-pool" id="animalsPool"></div>
+            </div>
+        </div>
+
+        <div id="battleScreen">
+            <canvas id="battleCanvas"></canvas>
+            <div id="battleUI">
+                <div class="team-stat left-team"><span>友军: <span id="leftCount">0</span></span></div>
+                <div style="color: #333;">VS</div>
+                <div class="team-stat right-team"><span>敌军: <span id="rightCount">0</span></span></div>
+            </div>
+            <div id="timerDisplay">⏱️ 60s</div>
+            <div id="resultScreen">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="result-sub" id="resultSub"></div>
+                <button class="btn" onclick="game.startNewGame()">🔄 再来一局</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="buying-hint" id="buyHint">快速购买中...</div>
+    <div class="skill-intro" id="skillIntro"></div>
+    <div class="cursor-animal" id="cursorAnimal"></div>
+
+    <script>
+        const TIER_PRICES = {1: 1, 2: 3, 3: 10, 4: 30, 5: 100, 6: 300, 7: 1000, 8: 2000, 9: 6000, 10: 20000};
+        const BATTLE_TIME_LIMIT = 60; // 战斗时间限制60秒
+        
+        function calculateBalancedStats(baseHp, baseAtk, baseDef, range, tier) {
+            let tierMult = Math.pow(1.5, tier - 1);
+            let rangeFactor = Math.max(0.6, 1.4 - (range / 800));
+            let atkFactor = Math.max(0.7, 1.1 - (range / 1000));
+            let meleeBonus = range < 50 ? 1.2 : 1.0;
+            let tankBonus = range < 40 ? 1.3 : 1.0;
+            
+            return {
+                hp: Math.round(baseHp * tierMult * rangeFactor * tankBonus / 5) * 5,
+                atk: Math.round(baseAtk * tierMult * atkFactor / 5) * 5,
+                def: Math.round(baseDef * tierMult * rangeFactor * meleeBonus / 5) * 5
+            };
+        }
+        
+        const ANIMAL_DB = {
+            "🐜": {name: "蚂蚁", tier: 1, baseHp: 15, baseAtk: 5, baseDef: 1, spd: 2, range: 25, ms: 1.0, skill: null, desc: ""},
+            "🕷️": {name: "蜘蛛", tier: 1, baseHp: 18, baseAtk: 6, baseDef: 1, spd: 1.2, range: 50, ms: 1.0, skill: "减速", skillDesc: "降低目标50%攻速3秒"},
+            "🐌": {name: "蜗牛", tier: 1, baseHp: 20, baseAtk: 3, baseDef: 8, spd: 0.3, range: 20, ms: 0.4, skill: null, desc: ""},
+            "🦂": {name: "蝎子", tier: 1, baseHp: 16, baseAtk: 10, baseDef: 2, spd: 0.8, range: 40, ms: 0.9, skill: "剧毒", skillDesc: "使目标每秒损失5HP，持续5秒"},
+            "🦋": {name: "蝴蝶", tier: 1, baseHp: 12, baseAtk: 4, baseDef: 0, spd: 1.8, range: 35, ms: 1.6, skill: null, desc: ""},
+            "🐛": {name: "毛虫", tier: 1, baseHp: 18, baseAtk: 6, baseDef: 3, spd: 0.6, range: 25, ms: 0.6, skill: null, desc: ""},
+            "🦗": {name: "蟋蟀", tier: 1, baseHp: 14, baseAtk: 8, baseDef: 0, spd: 2.5, range: 30, ms: 1.4, skill: null, desc: ""},
+            "🦟": {name: "蚊子", tier: 1, baseHp: 10, baseAtk: 5, baseDef: 0, spd: 3, range: 30, ms: 1.8, skill: "吸血", skillDesc: "造成伤害的80%转为生命"},
+            "🐭": {name: "老鼠", tier: 2, baseHp: 40, baseAtk: 10, baseDef: 2, spd: 2, range: 30, ms: 1.6, skill: null, desc: ""},
+            "🐰": {name: "兔子", tier: 2, baseHp: 45, baseAtk: 12, baseDef: 3, spd: 2.5, range: 45, ms: 2.2, skill: "闪避", skillDesc: "40%概率闪避攻击"},
+            "🦔": {name: "刺猬", tier: 2, baseHp: 50, baseAtk: 8, baseDef: 12, spd: 1.2, range: 35, ms: 1.0, skill: "反刺", skillDesc: "反弹30%近战伤害"},
+            "🦇": {name: "蝙蝠", tier: 2, baseHp: 30, baseAtk: 15, baseDef: 1, spd: 3, range: 70, ms: 2.2, skill: null, desc: ""},
+            "🦦": {name: "水獭", tier: 2, baseHp: 55, baseAtk: 18, baseDef: 4, spd: 1.8, range: 55, ms: 1.6, skill: null, desc: ""},
+            "🦐": {name: "虾", tier: 2, baseHp: 25, baseAtk: 25, baseDef: 0, spd: 3.5, range: 45, ms: 1.4, skill: "连击", skillDesc: "连续攻击2次"},
+            "🦪": {name: "牡蛎", tier: 2, baseHp: 80, baseAtk: 5, baseDef: 15, spd: 0.2, range: 20, ms: 0.3, skill: null, desc: ""},
+            "🐱": {name: "家猫", tier: 3, baseHp: 75, baseAtk: 28, baseDef: 5, spd: 2.5, range: 50, ms: 2.0, skill: "暴击", skillDesc: "35%概率造成3倍伤害"},
+            "🦊": {name: "狐狸", tier: 3, baseHp: 70, baseAtk: 26, baseDef: 4, spd: 2.2, range: 65, ms: 1.8, skill: "狡猾", skillDesc: "生命低于30%时移速翻倍"},
+            "🐷": {name: "家猪", tier: 3, baseHp: 120, baseAtk: 22, baseDef: 15, spd: 1.2, range: 50, ms: 1.4, skill: null, desc: ""},
+            "🦘": {name: "袋鼠", tier: 3, baseHp: 100, baseAtk: 35, baseDef: 6, spd: 1.8, range: 60, ms: 1.8, skill: "飞踢", skillDesc: "每3次攻击造成4倍伤害并击退"},
+            "🦚": {name: "孔雀", tier: 3, baseHp: 90, baseAtk: 30, baseDef: 6, spd: 1.5, range: 90, ms: 1.4, skill: "远程", skillDesc: "射程增加50%"},
+            "🐧": {name: "企鹅", tier: 3, baseHp: 85, baseAtk: 32, baseDef: 10, spd: 1.5, range: 50, ms: 1.6, skill: "严寒", skillDesc: "攻击20%概率冻结1秒"},
+            "🐡": {name: "河豚", tier: 3, baseHp: 70, baseAtk: 40, baseDef: 18, spd: 0.9, range: 50, ms: 1.0, skill: "膨胀", skillDesc: "受到攻击反弹40%伤害"},
+            "🐶": {name: "家犬", tier: 4, baseHp: 150, baseAtk: 45, baseDef: 15, spd: 2, range: 60, ms: 1.8, skill: "忠诚", skillDesc: "友军死亡时攻击+50%"},
+            "🐴": {name: "马", tier: 4, baseHp: 180, baseAtk: 55, baseDef: 15, spd: 2.5, range: 80, ms: 3.5, skill: "冲锋", skillDesc: "首次攻击3倍伤害并击退"},
+            "🐃": {name: "水牛", tier: 4, baseHp: 250, baseAtk: 50, baseDef: 45, spd: 0.9, range: 70, ms: 1.5, skill: null, desc: ""},
+            "🦭": {name: "海狮", tier: 4, baseHp: 160, baseAtk: 45, baseDef: 18, spd: 1.8, range: 75, ms: 2.0, skill: "表演", skillDesc: "吸引周围敌人攻击自己"},
+            "🦀": {name: "螃蟹", tier: 4, baseHp: 200, baseAtk: 30, baseDef: 80, spd: 1.2, range: 40, ms: 1.2, skill: "绕后", skillDesc: "开局3秒后瞬移到敌后"},
+            "🦞": {name: "龙虾", tier: 4, baseHp: 150, baseAtk: 85, baseDef: 20, spd: 1.2, range: 55, ms: 1.4, skill: "绕后", skillDesc: "开局3秒后瞬移到敌后"},
+            "🐙": {name: "章鱼", tier: 4, baseHp: 160, baseAtk: 35, baseDef: 12, spd: 1.5, range: 120, ms: 1.6, skill: "缠绕", skillDesc: "定身目标2秒"},
+            "🐗": {name: "野猪", tier: 5, baseHp: 350, baseAtk: 110, baseDef: 25, spd: 1.5, range: 70, ms: 2.0, skill: "狂暴", skillDesc: "生命低于50%攻速翻倍"},
+            "🦬": {name: "野牛", tier: 5, baseHp: 450, baseAtk: 90, baseDef: 65, spd: 1, range: 80, ms: 1.8, skill: "践踏", skillDesc: "周围100范围造成100伤害"},
+            "🦅": {name: "鹰", tier: 5, baseHp: 220, baseAtk: 150, baseDef: 8, spd: 3, range: 250, ms: 4.5, skill: "高空", skillDesc: "超远射程，免疫近战"},
+            "🐍": {name: "蛇", tier: 5, baseHp: 280, baseAtk: 120, baseDef: 15, spd: 3.2, range: 60, ms: 1.8, skill: "剧毒", skillDesc: "每秒损失15HP，持续5秒"},
+            "🐢": {name: "陆龟", tier: 5, baseHp: 700, baseAtk: 40, baseDef: 200, spd: 0.5, range: 40, ms: 0.6, skill: "无敌", skillDesc: "抵挡致命伤害并无敌3秒"},
+            "🦎": {name: "蜥蜴", tier: 5, baseHp: 300, baseAtk: 100, baseDef: 25, spd: 2.2, range: 75, ms: 2.2, skill: "再生", skillDesc: "每秒恢复20HP"},
+            "🐸": {name: "牛蛙", tier: 5, baseHp: 300, baseAtk: 90, baseDef: 20, spd: 2.8, range: 100, ms: 1.8, skill: "长舌", skillDesc: "将敌人拉至面前并眩晕"},
+            "🐺": {name: "狼", tier: 6, baseHp: 700, baseAtk: 180, baseDef: 40, spd: 2.8, range: 80, ms: 2.6, skill: "狼群", skillDesc: "周围每有1只狼伤害+30%"},
+            "🐻": {name: "黑熊", tier: 6, baseHp: 900, baseAtk: 250, baseDef: 85, spd: 1.5, range: 85, ms: 1.8, skill: "暴击", skillDesc: "40%概率3.5倍伤害并眩晕"},
+            "🐊": {name: "鳄鱼", tier: 6, baseHp: 850, baseAtk: 240, baseDef: 85, spd: 1.3, range: 85, ms: 2.0, skill: "翻滚", skillDesc: "范围伤害50%溅射并吸血"},
+            "🦈": {name: "鲨鱼", tier: 6, baseHp: 800, baseAtk: 320, baseDef: 30, spd: 2.5, range: 90, ms: 2.8, skill: "血怒", skillDesc: "目标低于50%血量伤害翻倍"},
+            "🦁": {name: "狮子", tier: 7, baseHp: 1300, baseAtk: 350, baseDef: 100, spd: 2.5, range: 95, ms: 2.8, skill: "威吓", skillDesc: "周围敌人攻击-40%"},
+            "🐅": {name: "豹子", tier: 7, baseHp: 1000, baseAtk: 400, baseDef: 60, spd: 3.5, range: 95, ms: 4.0, skill: "潜行", skillDesc: "前5秒隐身，首次攻击5倍伤害"},
+            "🦏": {name: "犀牛", tier: 7, baseHp: 1800, baseAtk: 450, baseDef: 200, spd: 1.3, range: 105, ms: 2.6, skill: "冲撞", skillDesc: "路径上敌人受到300伤害并击退"},
+            "🦛": {name: "河马", tier: 7, baseHp: 2000, baseAtk: 350, baseDef: 160, spd: 1.4, range: 95, ms: 2.2, skill: "吞噬", skillDesc: "秒杀低于25%血量的敌人"},
+            "🐯": {name: "成年虎", tier: 8, baseHp: 2800, baseAtk: 600, baseDef: 120, spd: 3, range: 110, ms: 3.0, skill: "处决", skillDesc: "对低于35%血量敌人直接秒杀"},
+            "🐻‍❄️": {name: "北极熊", tier: 8, baseHp: 3000, baseAtk: 550, baseDef: 220, spd: 1.8, range: 110, ms: 2.6, skill: "冰封", skillDesc: "50%概率冻结3秒，冻结敌人受伤翻倍"},
+            "🦣": {name: "猛犸象", tier: 8, baseHp: 5500, baseAtk: 450, baseDef: 280, spd: 0.6, range: 130, ms: 1.8, skill: "地震", skillDesc: "每4秒范围200伤害并眩晕"},
+            "🐊": {name: "湾鳄", tier: 8, baseHp: 3200, baseAtk: 750, baseDef: 140, spd: 1.8, range: 110, ms: 2.8, skill: "伏击", skillDesc: "静止时隐身，首次攻击10倍伤害"},
+            "🐘": {name: "非洲象", tier: 9, baseHp: 11000, baseAtk: 900, baseDef: 450, spd: 0.6, range: 140, ms: 2.0, skill: "毁灭", skillDesc: "前方大范围双倍伤害并击退"},
+            "🐋": {name: "虎鲸", tier: 9, baseHp: 9000, baseAtk: 1200, baseDef: 220, spd: 2, range: 130, ms: 3.0, skill: "召唤", skillDesc: "召唤3个60%属性的分身"},
+            "🦕": {name: "霸王龙", tier: 9, baseHp: 8000, baseAtk: 1400, baseDef: 280, spd: 1, range: 130, ms: 2.4, skill: "暴君", skillDesc: "无视防御造成真实伤害"},
+            "🐉": {name: "龙", tier: 10, baseHp: 32000, baseAtk: 2200, baseDef: 650, spd: 1.5, range: 350, ms: 3.2, skill: "龙息", skillDesc: "持续喷射火焰，范围持续伤害"},
+            "🦄": {name: "独角兽", tier: 10, baseHp: 26000, baseAtk: 1300, baseDef: 450, spd: 2.5, range: 220, ms: 4.5, skill: "复活", skillDesc: "死亡满血复活，治疗全场友军"}
+        };
+
+        for (let emoji in ANIMAL_DB) {
+            let data = ANIMAL_DB[emoji];
+            let stats = calculateBalancedStats(data.baseHp, data.baseAtk, data.baseDef, data.range, data.tier);
+            data.hp = stats.hp;
+            data.atk = stats.atk;
+            data.def = stats.def;
+        }
+
+        class Projectile {
+            constructor(x, y, target, damage, isCrit, team, type) {
+                this.x = x;
+                this.y = y;
+                this.target = target;
+                this.damage = damage;
+                this.isCrit = isCrit;
+                this.team = team;
+                this.alive = true;
+                this.type = type || 'normal';
+                
+                const types = {
+                    'normal': {emoji: '⚡', speed: 12},
+                    'fire': {emoji: '🔥', speed: 10},
+                    'ice': {emoji: '❄️', speed: 8},
+                    'arrow': {emoji: '🏹', speed: 14},
+                    'poison': {emoji: '☠️', speed: 6}
+                };
+                
+                this.config = types[this.type] || types['normal'];
+                this.rotation = 0;
+                this.scale = 1;
+                this.trail = [];
+            }
+            
+            update() {
+                if (!this.target || !this.target.alive || !this.alive) {
+                    this.alive = false;
+                    return;
+                }
+                
+                this.trail.push({x: this.x, y: this.y, life: 1});
+                this.trail = this.trail.filter(t => {
+                    t.life -= 0.1;
+                    return t.life > 0;
+                });
+                
+                let dx = this.target.x - this.x;
+                let dy = this.target.y - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 30) {
+                    this.target.takeDamage(this.damage, {x: this.x, y: this.y, team: this.team});
+                    this.alive = false;
+                    let effect = this.isCrit ? '💥' : (this.type === 'fire' ? '🔥' : this.type === 'ice' ? '❄️' : '💢');
+                    game.addEffect(this.target.x, this.target.y, effect, 0.6);
+                } else {
+                    this.x += (dx / dist) * this.config.speed;
+                    this.y += (dy / dist) * this.config.speed;
+                    this.rotation += 0.3;
+                    this.scale = 1 + Math.sin(Date.now() / 100) * 0.2;
+                }
+            }
+            
+            draw(ctx) {
+                this.trail.forEach((t) => {
+                    ctx.fillStyle = `rgba(255, 255, 0, ${t.life * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(t.x, t.y, 3 * t.life, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(this.scale, this.scale);
+                ctx.font = "24px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.config.emoji, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        class AreaEffect {
+            constructor(x, y, radius, color, duration = 0.5, damage = 0) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.life = duration;
+                this.maxLife = duration;
+                this.damage = damage;
+                this.expanding = true;
+                this.currentRadius = 5;
+            }
+            
+            update(dt) {
+                if (this.expanding) {
+                    this.currentRadius += (this.radius - this.currentRadius) * 0.2;
+                    if (this.currentRadius > this.radius * 0.9) this.expanding = false;
+                }
+                this.life -= dt;
+                return this.life > 0;
+            }
+            
+            draw(ctx) {
+                let alpha = (this.life / this.maxLife) * 0.6;
+                let r = this.expanding ? this.currentRadius : this.radius;
+                
+                ctx.fillStyle = this.color.replace('ALPHA', alpha * 0.3);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = this.color.replace('ALPHA', alpha * 0.6);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = this.color.replace('ALPHA', alpha);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        class Unit {
+            constructor(emoji, team, x, y, isAnimating = true) {
+                this.emoji = emoji;
+                this.team = team;
+                this.data = ANIMAL_DB[emoji];
+                this.x = x;
+                this.y = y;
+                this.startX = x;
+                
+                this.maxHp = this.data.hp;
+                this.hp = this.maxHp;
+                this.atk = this.data.atk;
+                this.def = this.data.def;
+                this.atkSpd = this.data.spd;
+                this.range = this.data.range;
+                this.moveSpeed = this.data.ms;
+                
+                this.alive = true;
+                this.target = null;
+                this.lastAttack = 0;
+                this.direction = team === 'left' ? 1 : -1;
+                this.effects = {};
+                this.skillCooldown = 0;
+                this.attackCount = 0;
+                this.hasRevived = false;
+                this.isInvisible = false;
+                this.hasFlanked = false;
+                this.flankTimer = 0; // 绕后计时器
+                
+                this.size = 18 + (this.data.tier * this.data.tier); 
+                if (this.data.tier === 10) this.size = 120;
+                if (this.data.tier === 1) this.size = 16;
+                
+                this.barWidth = Math.min(80, 20 + this.maxHp / 200);
+                this.barHeight = Math.max(4, this.data.tier * 0.8);
+                
+                this.scale = isAnimating ? 0 : 1;
+                this.targetScale = 1;
+                this.attackAnim = 0;
+                this.deathAnim = 0;
+                this.idleOffset = Math.random() * Math.PI * 2;
+                this.hitFlash = 0;
+                
+                // 龙和猛犸象是纯技能单位，但也需要移动
+                this.isSkillUnit = (this.data.name === '猛犸象' || this.data.name === '龙');
+                this.nextSkillTime = 0;
+                
+                // 无敌技能冷却
+                this.invincibleCooldown = 0;
+            }
+            
+            update(dt, enemies, projectiles, areaEffects) {
+                // 死亡判定放在第一位
+                if (this.hp <= 0) {
+                    if (this.alive) {
+                        this.alive = false;
+                        this.deathAnim = 0;
+                    } else {
+                        this.deathAnim += dt;
+                    }
+                    return;
+                }
+                
+                // 出生动画
+                if (this.scale < this.targetScale) {
+                    this.scale += dt * 3;
+                    if (this.scale > this.targetScale) this.scale = this.targetScale;
+                }
+                
+                if (this.attackAnim > 0) this.attackAnim -= dt * 5;
+                
+                // 状态效果
+                if (this.effects.poison) {
+                    this.hp -= this.effects.poison.dps * dt;
+                    this.effects.poison.time -= dt;
+                    if (this.effects.poison.time <= 0) delete this.effects.poison;
+                }
+                
+                // 检查中毒死亡
+                if (this.hp <= 0) {
+                    this.alive = false;
+                    this.deathAnim = 0;
+                    return;
+                }
+                
+                if (this.effects.stun) {
+                    this.effects.stun -= dt;
+                    if (this.effects.stun <= 0) delete this.effects.stun;
+                    return;
+                }
+                
+                // 无敌效果计时
+                if (this.effects.invincible) {
+                    this.effects.invincible -= dt;
+                    if (this.effects.invincible <= 0) {
+                        delete this.effects.invincible;
+                    }
+                }
+                
+                // 技能冷却
+                if (this.skillCooldown > 0) this.skillCooldown -= dt;
+                if (this.invincibleCooldown > 0) this.invincibleCooldown -= dt;
+                
+                // 绕后逻辑 - 修复BUG
+                if (this.data.skill === '绕后' && !this.hasFlanked) {
+                    this.flankTimer += dt;
+                    if (this.flankTimer >= 3) { // 3秒后绕后
+                        let w = game.canvas.width;
+                        // 计算对称位置：我方在x，敌方在w-x附近
+                        // 左方绕后到右方后方，右方绕后到左方后方
+                        let targetX;
+                        if (this.team === 'left') {
+                            // 左方单位绕后到右方后方（右侧屏幕的右边）
+                            targetX = w - 80 - Math.random() * 100;
+                        } else {
+                            // 右方单位绕后到左方后方（左侧屏幕的左边）
+                            targetX = 80 + Math.random() * 100;
+                        }
+                        
+                        let targetY = this.y + (Math.random() - 0.5) * 150;
+                        targetY = Math.max(80, Math.min(game.canvas.height - 80, targetY));
+                        
+                        game.addEffect(this.x, this.y, '💨', 0.5);
+                        this.x = targetX;
+                        this.y = targetY;
+                        this.hasFlanked = true;
+                        // 绕后后反向
+                        this.direction = -this.direction;
+                        game.addEffect(this.x, this.y, '⚡', 0.8);
+                    }
+                }
+                
+                if (this.data.skill === '潜行' && this.attackCount < 1) {
+                    this.isInvisible = true;
+                } else {
+                    this.isInvisible = false;
+                }
+                
+                // 技能单位（猛犸象、龙）也需要寻找目标和移动
+                if (this.isSkillUnit) {
+                    this.nextSkillTime -= dt;
+                    if (this.nextSkillTime <= 0) {
+                        this.performSkillOnlyAttack(enemies, areaEffects);
+                        this.nextSkillTime = this.data.name === '猛犸象' ? 4 : 2;
+                    }
+                    // 技能单位也需要移动寻找目标
+                }
+                
+                // 寻找最近目标
+                let minDist = Infinity;
+                this.target = null;
+                for (let enemy of enemies) {
+                    if (!enemy.alive) continue;
+                    if (enemy.data.skill === '高空' && this.range < 100) continue;
+                    let dist = Math.abs(enemy.x - this.x);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        this.target = enemy;
+                    }
+                }
+                
+                // 移动和攻击逻辑
+                if (this.target) {
+                    let dist = Math.abs(this.target.x - this.x);
+                    
+                    if (dist > this.range) {
+                        let moveDist = this.moveSpeed * dt * 45;
+                        if (this.data.skill === '狂暴' && this.hp < this.maxHp * 0.5) moveDist *= 1.5;
+                        if (this.data.skill === '狡猾' && this.hp < this.maxHp * 0.3) moveDist *= 2;
+                        
+                        this.x += moveDist * this.direction;
+                        
+                        let dy = this.target.y - this.y;
+                        if (Math.abs(dy) > 60 && Math.random() < 0.08) {
+                            this.y += Math.sign(dy) * moveDist * 0.2;
+                        }
+                        
+                        this.y += Math.sin(Date.now() / 1000 + this.idleOffset) * 0.5;
+                        
+                    } else {
+                        // 在射程内
+                        // 技能单位（猛犸象、龙）不普攻，而是靠技能
+                        if (!this.isSkillUnit) {
+                            this.lastAttack += dt;
+                            let interval = 1.0 / (this.effects.slow ? this.atkSpd * 0.5 : this.atkSpd);
+                            
+                            if (this.lastAttack >= interval) {
+                                this.lastAttack = 0;
+                                this.attackAnim = 1;
+                                this.performAttack(projectiles, areaEffects);
+                            }
+                        }
+                    }
+                } else {
+                    // 没有目标，向前移动
+                    let moveDist = this.moveSpeed * dt * 45;
+                    this.x += moveDist * this.direction;
+                    this.y += Math.sin(Date.now() / 800 + this.idleOffset) * 0.3;
+                }
+                
+                // 边界限制
+                this.y = Math.max(80, Math.min(game.canvas.height - 80, this.y));
+                
+                // 再生
+                if (this.data.skill === '再生' && this.hp < this.maxHp) {
+                    let heal = this.hp < this.maxHp * 0.5 ? 40 : 20;
+                    this.hp = Math.min(this.maxHp, this.hp + heal * dt);
+                }
+                
+                // 复活检查
+                if (this.hp <= 0 && this.alive) {
+                    if (this.data.skill === '复活' && !this.hasRevived) {
+                        this.hp = this.maxHp;
+                        this.hasRevived = true;
+                        game.addEffect(this.x, this.y - this.size, '✨', 1.5);
+                        let allies = this.team === 'left' ? game.units : game.enemyUnits;
+                        for (let ally of allies) {
+                            if (ally.alive && Math.abs(ally.x - this.x) < 200) {
+                                ally.hp = Math.min(ally.maxHp, ally.hp + this.maxHp * 0.5);
+                                game.addEffect(ally.x, ally.y - ally.size, '💚', 0.5);
+                            }
+                        }
+                    } else {
+                        this.alive = false;
+                        this.deathAnim = 0;
+                    }
+                }
+            }
+            
+            performSkillOnlyAttack(enemies, areaEffects) {
+                if (this.data.name === '猛犸象') {
+                    let dmg = 200;
+                    let range = 200;
+                    areaEffects.push(new AreaEffect(this.x, this.y, range, 'rgba(139,69,19,ALPHA)', 0.8, dmg));
+                    
+                    for (let e of enemies) {
+                        if (e.alive) {
+                            let dist = Math.sqrt(Math.pow(e.x - this.x, 2) + Math.pow(e.y - this.y, 2));
+                            if (dist < range) {
+                                e.takeDamage(dmg, this);
+                                e.effects.stun = 2;
+                            }
+                        }
+                    }
+                    game.addEffect(this.x, this.y - this.size, '💢', 1);
+                }
+                
+                if (this.data.name === '龙') {
+                    let facing = this.direction;
+                    let coneX = this.x + facing * 150;
+                    let coneY = this.y;
+                    let range = 300;
+                    
+                    areaEffects.push(new AreaEffect(coneX, coneY, range * 0.6, 'rgba(255,69,0,ALPHA)', 1.5, 0));
+                    
+                    for (let e of enemies) {
+                        if (e.alive) {
+                            let ex = e.x, ey = e.y;
+                            let inRange = false;
+                            if (facing > 0 && ex > this.x && ex < this.x + range && Math.abs(ey - this.y) < 100) inRange = true;
+                            if (facing < 0 && ex < this.x && ex > this.x - range && Math.abs(ey - this.y) < 100) inRange = true;
+                            
+                            if (inRange) {
+                                e.takeDamage(250, this);
+                                if (Math.random() < 0.3) game.addEffect(e.x, e.y, '🔥', 0.5);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            performAttack(projectiles, areaEffects) {
+                if (!this.target || !this.target.alive) return;
+                
+                this.attackCount++;
+                let dmg = Math.max(1, this.atk - (this.target.def * 0.4));
+                let isCrit = false;
+                let projType = 'normal';
+                
+                if ((this.data.skill === '暴击' || (this.data.skill === '潜行' && this.attackCount <= 1)) 
+                    && Math.random() < (this.data.tier >= 7 ? 0.4 : 0.35)) {
+                    dmg *= (this.data.name === '豹子' ? 5 : 3.5);
+                    isCrit = true;
+                }
+                
+                if (this.data.skill === '飞踢' && this.attackCount % 3 === 0) {
+                    dmg *= 4;
+                    game.addEffect(this.x, this.y - this.size, '🦶', 0.8);
+                    this.target.x += 80 * (this.team === 'left' ? 1 : -1);
+                    projType = 'arrow';
+                } else if (this.data.skill === '伏击' && this.attackCount === 1) {
+                    dmg *= 10;
+                    game.addEffect(this.x, this.y - this.size, '🥷', 1);
+                } else if (this.data.skill === '处决' && this.target.hp < this.target.maxHp * 0.35) {
+                    dmg = 99999;
+                    game.addEffect(this.target.x, this.target.y - this.target.size, '⚔️', 1);
+                } else if (this.data.skill === '暴君') {
+                    dmg = this.atk;
+                }
+                
+                let isRanged = this.range > 80 || ['孔雀', '章鱼', '鹰', '牛蛙', '龙', '虎鲸', '独角兽'].includes(this.data.name);
+                
+                if (isRanged) {
+                    if (this.data.skill === '高空') projType = 'arrow';
+                    else if (this.data.skill === '冰封') projType = 'ice';
+                    else if (this.data.skill === '剧毒') projType = 'poison';
+                    
+                    projectiles.push(new Projectile(
+                        this.x, this.y, this.target, dmg, isCrit, this.team, projType
+                    ));
+                    
+                    if (['毁灭', '践踏', '翻滚', '冲撞'].includes(this.data.skill)) {
+                        let range = this.data.skill === '毁灭' ? 180 : 100;
+                        let aoeDmg = dmg * (this.data.skill === '毁灭' ? 0.8 : 0.5);
+                        let color = this.data.skill === '毁灭' ? 'rgba(255,69,0,ALPHA)' : 'rgba(160,82,45,ALPHA)';
+                        
+                        let centerX = (this.x + this.target.x) / 2;
+                        let centerY = (this.y + this.target.y) / 2;
+                        areaEffects.push(new AreaEffect(centerX, centerY, range, color, 0.6, aoeDmg));
+                        
+                        for (let e of (this.team === 'left' ? game.enemyUnits : game.units)) {
+                            if (e.alive && e !== this.target) {
+                                let dist = Math.sqrt(Math.pow(e.x - centerX, 2) + Math.pow(e.y - centerY, 2));
+                                if (dist < range) {
+                                    e.takeDamage(aoeDmg, this);
+                                    if (this.data.skill === '冲撞') {
+                                        e.x += 60 * (this.team === 'left' ? 1 : -1);
+                                        e.effects.stun = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    this.target.takeDamage(dmg, this);
+                    
+                    if (isCrit) game.addEffect(this.target.x, this.target.y - this.target.size/2, '💥', 0.6);
+                    
+                    if (this.data.skill === '翻滚') {
+                        this.hp = Math.min(this.maxHp, this.hp + dmg * 0.5);
+                        game.addEffect(this.x, this.y, '🌀', 0.5);
+                        let centerX = (this.x + this.target.x) / 2;
+                        let centerY = (this.y + this.target.y) / 2;
+                        areaEffects.push(new AreaEffect(centerX, centerY, 80, 'rgba(0,255,100,ALPHA)', 0.4));
+                        
+                        for (let e of (this.team === 'left' ? game.enemyUnits : game.units)) {
+                            if (e.alive && e !== this.target && Math.abs(e.x - centerX) < 80 && Math.abs(e.y - centerY) < 40) {
+                                let splash = Math.max(1, this.atk * 0.5 - e.def * 0.4);
+                                e.takeDamage(splash, this);
+                                this.hp = Math.min(this.maxHp, this.hp + splash * 0.5);
+                            }
+                        }
+                    }
+                    
+                    if (this.data.skill === '践踏') {
+                        let centerX = (this.x + this.target.x) / 2;
+                        let centerY = (this.y + this.target.y) / 2;
+                        areaEffects.push(new AreaEffect(centerX, centerY, 100, 'rgba(160,82,45,ALPHA)', 0.5));
+                        
+                        for (let e of (this.team === 'left' ? game.enemyUnits : game.units)) {
+                            if (e.alive && e !== this.target && Math.abs(e.x - centerX) < 100 && Math.abs(e.y - centerY) < 50) {
+                                e.takeDamage(100, this);
+                            }
+                        }
+                        game.addEffect(this.x, this.y, '👣', 0.5);
+                    }
+                    
+                    if (this.data.skill === '威吓') {
+                        for (let e of (this.team === 'left' ? game.enemyUnits : game.units)) {
+                            if (e.alive && Math.abs(e.x - this.x) < 150) {
+                                e.effects.slow = Math.max(e.effects.slow || 0, 3);
+                            }
+                        }
+                    }
+                }
+                
+                if (this.data.skill === '吸血') {
+                    let heal = dmg * 0.8;
+                    this.hp = Math.min(this.maxHp, this.hp + heal);
+                    game.addEffect(this.x, this.y - this.size, '❤️', 0.4);
+                }
+                
+                if (this.data.skill === '减速') this.target.effects.slow = 5;
+                
+                if (this.data.skill === '剧毒') {
+                    this.target.effects.poison = {
+                        dps: this.data.tier * (this.data.tier >= 5 ? 5 : 3), 
+                        time: 5
+                    };
+                }
+                
+                if (this.data.skill === '缠绕' && Math.random() < 0.4) {
+                    this.target.effects.stun = 2;
+                    game.addEffect(this.target.x, this.target.y, '⛓️', 1);
+                }
+                if (this.data.skill === '冰封' && Math.random() < 0.5) {
+                    this.target.effects.stun = 3;
+                    game.addEffect(this.target.x, this.target.y, '❄️', 1);
+                }
+                
+                if (this.data.skill === '狂暴' && this.hp < this.maxHp * 0.5) {
+                    this.lastAttack = 99;
+                }
+                
+                if (this.data.skill === '召唤' && this.attackCount % 3 === 0 && this.attackCount > 0) {
+                    for (let i = 0; i < 3; i++) {
+                        let clone = new Unit('🐋', this.team, this.x, this.y + (Math.random()-0.5)*80, true);
+                        clone.maxHp = Math.floor(this.maxHp * 0.6);
+                        clone.hp = clone.maxHp;
+                        clone.atk = Math.floor(this.atk * 0.6);
+                        clone.isClone = true;
+                        clone.size = this.size * 0.7;
+                        let arr = this.team === 'left' ? game.units : game.enemyUnits;
+                        arr.push(clone);
+                        game.addEffect(this.x, this.y - this.size, '👥', 1);
+                    }
+                }
+                
+                if (this.data.skill === '长舌') {
+                    this.target.x = this.x + 50 * (this.team === 'left' ? 1 : -1);
+                    this.target.effects.stun = 1;
+                    game.addEffect(this.target.x, this.target.y, '👅', 0.8);
+                }
+            }
+            
+            takeDamage(dmg, attacker) {
+                if (!this.alive) return;
+                
+                // 无敌效果检查
+                if (this.effects.invincible && this.effects.invincible > 0) return;
+                
+                // 乌龟无敌技能触发
+                if (this.data.skill === '无敌' && this.invincibleCooldown <= 0 && this.hp - dmg <= 0) {
+                    this.hp = 1;
+                    this.effects.invincible = 3; // 3秒无敌
+                    this.invincibleCooldown = 15; // 15秒冷却
+                    game.addEffect(this.x, this.y - this.size, '🛡️', 1.5);
+                    game.addEffect(this.x, this.y, '✨', 1);
+                    return;
+                }
+                
+                if (this.data.skill === '闪避' && Math.random() < 0.4) {
+                    game.addEffect(this.x, this.y - this.size, '💨', 0.5);
+                    return;
+                }
+                
+                if (this.data.skill === '高空' && attacker && Math.abs(attacker.x - this.x) < 100) {
+                    return;
+                }
+                
+                let actualDmg = dmg;
+                if (this.data.skill === '防御' || this.data.name === '螃蟹') actualDmg *= 0.6;
+                if (this.data.skill === '反刺' && attacker && Math.abs(attacker.x - this.x) < 100) {
+                    attacker.hp -= actualDmg * 0.3;
+                }
+                if (this.data.skill === '膨胀') {
+                    attacker.hp -= actualDmg * 0.4;
+                }
+                
+                this.hp -= actualDmg;
+                
+                // 立即检查死亡
+                if (this.hp <= 0) {
+                    this.hp = 0;
+                    this.alive = false;
+                    this.deathAnim = 0;
+                    return;
+                }
+                
+                game.addDamageNumber(this.x, this.y - this.size, Math.floor(actualDmg), actualDmg > this.maxHp * 0.15);
+                this.hitFlash = 1;
+            }
+            
+            draw(ctx) {
+                if (!this.alive && this.deathAnim > 0.5) return;
+                
+                ctx.save();
+                
+                let drawX = this.x;
+                let drawY = this.y;
+                let drawScale = this.scale;
+                
+                if (!this.alive) {
+                    drawScale *= Math.max(0, (1 - this.deathAnim * 2));
+                    ctx.translate(drawX, drawY);
+                    ctx.rotate(this.deathAnim * Math.PI);
+                    ctx.translate(-drawX, -drawY);
+                }
+                
+                if (this.attackAnim > 0 && this.alive) {
+                    let jump = Math.sin(this.attackAnim * Math.PI) * 20 * this.direction;
+                    drawX += jump;
+                }
+                
+                if (this.isInvisible) ctx.globalAlpha = 0.3;
+                
+                if (this.hitFlash > 0) {
+                    ctx.globalAlpha = Math.max(0.3, ctx.globalAlpha * (0.5 + Math.sin(this.hitFlash * 20) * 0.3));
+                    this.hitFlash -= 0.1;
+                }
+                
+                // 无敌光环
+                if (this.effects.invincible && this.effects.invincible > 0) {
+                    ctx.save();
+                    ctx.translate(drawX, drawY);
+                    ctx.globalAlpha = 0.4 + Math.sin(Date.now()/80) * 0.2;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.9 * drawScale, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                
+                ctx.font = `${this.size * drawScale}px 'Segoe UI Emoji'`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                
+                if (this.team === 'left') {
+                    ctx.save();
+                    ctx.translate(drawX, drawY);
+                    ctx.scale(-1 * drawScale, drawScale);
+                    ctx.fillText(this.emoji, 0, 0);
+                    ctx.restore();
+                } else {
+                    ctx.save();
+                    ctx.translate(drawX, drawY);
+                    ctx.scale(drawScale, drawScale);
+                    ctx.fillText(this.emoji, 0, 0);
+                    ctx.restore();
+                }
+                
+                if (this.effects.stun) {
+                    ctx.font = `${this.size * 0.5}px Arial`;
+                    ctx.fillText('😵', drawX, drawY - this.size * 0.5);
+                }
+                
+                ctx.restore();
+                
+                if (!this.alive) return;
+                
+                let barW = Math.max(30, Math.min(80, this.barWidth));
+                let barH = Math.max(3, this.barHeight);
+                let currentHp = Math.max(0, this.hp);
+                let hpPct = Math.min(1, currentHp / this.maxHp);
+                let barY = drawY - this.size * drawScale / 2 - barH - 8;
+                
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.fillRect(drawX - barW/2 - 1, barY - 1, barW + 2, barH + 2);
+                
+                let r, g, b;
+                if (this.team === 'left') {
+                    g = Math.floor(200 * hpPct + 50);
+                    r = Math.floor(255 * (1 - hpPct));
+                    b = 50;
+                } else {
+                    r = Math.floor(200 * hpPct + 55);
+                    g = Math.floor(100 * hpPct);
+                    b = Math.floor(100 * hpPct);
+                }
+                
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fillRect(drawX - barW/2, barY, barW * hpPct, barH);
+                
+                if (hpPct < 1) {
+                    ctx.fillStyle = "rgba(80,80,80,0.5)";
+                    ctx.fillRect(drawX - barW/2 + barW * hpPct, barY, barW * (1-hpPct), barH);
+                }
+                
+                ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(drawX - barW/2, barY, barW, barH);
+            }
+        }
+
+        class Game {
+            constructor() {
+                this.state = 'start';
+                this.money = 0;
+                this.army = [];
+                this.deployedUnits = [];
+                this.deployMode = 'auto';
+                this.selectedAnimal = null;
+                
+                this.units = [];
+                this.enemyUnits = [];
+                this.projectiles = [];
+                this.areaEffects = [];
+                
+                this.canvas = document.getElementById('battleCanvas');
+                this.deployCanvas = document.getElementById('deployCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.deployCtx = this.deployCanvas.getContext('2d');
+                
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                
+                this.effects = [];
+                this.lastTime = 0;
+                this.winner = null;
+                this.battleTimer = 0;
+                this.battleStartTime = 0;
+                
+                this.longPressTimer = null;
+                this.longPressTarget = null;
+                
+                this.initShop();
+                this.initDeployCanvas();
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.deployCanvas.width = window.innerWidth;
+                this.deployCanvas.height = window.innerHeight - 160;
+            }
+            
+            initDeployCanvas() {
+                const canvas = this.deployCanvas;
+                
+                canvas.addEventListener('click', (e) => {
+                    if (this.state !== 'deploy') return;
+                    if (!this.selectedAnimal) {
+                        this.showDeployHint('请先点击下方选择动物！');
+                        return;
+                    }
+                    this.tryPlaceAnimal(e);
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    const cursor = document.getElementById('cursorAnimal');
+                    if (this.state === 'deploy' && this.selectedAnimal) {
+                        cursor.style.display = 'block';
+                        cursor.style.left = e.clientX + 'px';
+                        cursor.style.top = e.clientY + 'px';
+                        cursor.textContent = this.selectedAnimal;
+                    } else {
+                        cursor.style.display = 'none';
+                    }
+                });
+            }
+            
+            tryPlaceAnimal(e) {
+                const rect = this.deployCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x > this.deployCanvas.width * 0.45) {
+                    this.addEffect(x, y, '❌', 0.5);
+                    this.showDeployHint('只能在左侧我方区域放置！');
+                    return false;
+                }
+                
+                const idx = this.army.indexOf(this.selectedAnimal);
+                if (idx === -1) {
+                    this.selectedAnimal = null;
+                    this.updateDeployPanel();
+                    this.showDeployHint('该动物已用完！');
+                    return false;
+                }
+                
+                this.deployedUnits.push({emoji: this.selectedAnimal, x: x, y: y});
+                this.army.splice(idx, 1);
+                
+                this.updateDeployPanel();
+                this.drawDeploy();
+                
+                if (!this.army.includes(this.selectedAnimal)) {
+                    this.selectedAnimal = null;
+                    this.updateDeployPanel();
+                }
+                
+                this.checkCanStartBattle();
+                return true;
+            }
+            
+            showDeployHint(text) {
+                const hint = document.getElementById('deployHint');
+                hint.textContent = text;
+                hint.style.opacity = '1';
+                setTimeout(() => { hint.style.opacity = '0.7'; }, 1000);
+            }
+            
+            checkCanStartBattle() {
+                const btn = document.getElementById('btnStartBattle');
+                btn.disabled = this.deployedUnits.length === 0;
+            }
+            
+            updateDeployPanel() {
+                const pool = document.getElementById('animalsPool');
+                pool.innerHTML = '';
+                
+                let counts = {};
+                this.army.forEach(e => { counts[e] = (counts[e] || 0) + 1; });
+                
+                let sortedEmojis = Object.keys(counts).sort((a, b) => ANIMAL_DB[a].tier - ANIMAL_DB[b].tier);
+                
+                sortedEmojis.forEach(emoji => {
+                    let count = counts[emoji];
+                    let data = ANIMAL_DB[emoji];
+                    
+                    let item = document.createElement('div');
+                    item.className = 'pool-item';
+                    if (this.selectedAnimal === emoji) item.classList.add('selected');
+                    
+                    item.innerHTML = `
+                        <span class="emoji">${emoji}</span>
+                        <span class="count">${count}</span>
+                        <span class="range">📏${data.range}</span>
+                        ${data.skill ? `<span class="skill-mini">${data.skill}</span>` : '<span class="skill-mini">-</span>'}
+                    `;
+                    
+                    item.onclick = () => {
+                        if (count > 0) {
+                            this.selectedAnimal = emoji;
+                            this.updateDeployPanel();
+                        }
+                    };
+                    
+                    if (data.skill) {
+                        item.querySelector('.skill-mini').addEventListener('mouseenter', (e) => {
+                            this.showSkillIntro(e, data.skillDesc);
+                        });
+                        item.querySelector('.skill-mini').addEventListener('mouseleave', () => {
+                            this.hideSkillIntro();
+                        });
+                    }
+                    
+                    pool.appendChild(item);
+                });
+                
+                document.getElementById('placedCount').textContent = this.deployedUnits.length;
+                document.getElementById('remainingCount').textContent = this.army.length;
+                document.getElementById('emptyHint').style.display = this.deployedUnits.length > 0 ? 'none' : 'block';
+            }
+            
+            showSkillIntro(e, text) {
+                const intro = document.getElementById('skillIntro');
+                intro.textContent = text;
+                intro.style.display = 'block';
+                
+                const rect = e.target.getBoundingClientRect();
+                let left = rect.left;
+                let top = rect.top - 60;
+                
+                if (left < 10) left = 10;
+                if (left > window.innerWidth - 300) left = window.innerWidth - 300;
+                if (top < 10) top = rect.bottom + 10;
+                
+                intro.style.left = left + 'px';
+                intro.style.top = top + 'px';
+            }
+            
+            hideSkillIntro() {
+                document.getElementById('skillIntro').style.display = 'none';
+            }
+            
+            startNewGame() {
+                let roll = Math.random();
+                if (roll < 0.3) {
+                    this.money = Math.max(10, Math.floor(Math.random() * 150) + 50);
+                    this.moneyTier = 'poor';
+                    this.moneyTierName = '贫穷';
+                } else if (roll < 0.6) {
+                    this.money = Math.floor(Math.random() * 700) + 300;
+                    this.moneyTier = 'normal';
+                    this.moneyTierName = '普通';
+                } else if (roll < 0.9) {
+                    this.money = Math.floor(Math.random() * 6500) + 1500;
+                    this.moneyTier = 'rich';
+                    this.moneyTierName = '富裕';
+                } else {
+                    this.money = Math.floor(Math.random() * 10000) + 15000;
+                    this.moneyTier = 'tycoon';
+                    this.moneyTierName = '富豪';
+                }
+                
+                this.army = [];
+                this.deployedUnits = [];
+                this.deployMode = 'auto';
+                this.selectedAnimal = null;
+                this.updateShopUI();
+                
+                document.getElementById('startScreen').style.display = 'none';
+                document.getElementById('shopScreen').style.display = 'flex';
+                document.getElementById('deployScreen').style.display = 'none';
+                document.getElementById('battleScreen').style.display = 'none';
+                document.getElementById('resultScreen').style.display = 'none';
+                document.getElementById('cursorAnimal').style.display = 'none';
+                
+                document.getElementById('btnAuto').classList.add('active');
+                document.getElementById('btnManual').classList.remove('active');
+                
+                const tierEl = document.getElementById('moneyTier');
+                tierEl.className = 'money-tier tier-' + this.moneyTier;
+                tierEl.textContent = this.moneyTierName;
+            }
+            
+            initShop() {
+                const grid = document.getElementById('animalGrid');
+                grid.innerHTML = '';
+                
+                for (let [emoji, data] of Object.entries(ANIMAL_DB)) {
+                    let card = document.createElement('div');
+                    card.className = 'animal-card';
+                    
+                    card.innerHTML = `
+                        <span class="emoji">${emoji}</span>
+                        <div class="name">${data.name}</div>
+                        <div class="tier">T${data.tier} · ${TIER_PRICES[data.tier]}G</div>
+                        <div class="card-info">
+                            <span class="range-badge">📏 距离: ${data.range}</span>
+                            ${data.skill ? `<span class="skill-tag-mini">${data.skill}</span>` : ''}
+                        </div>
+                    `;
+                    
+                    card.dataset.emoji = emoji;
+                    
+                    if (data.skill) {
+                        const skillEl = card.querySelector('.skill-tag-mini');
+                        skillEl.addEventListener('mouseenter', (e) => { this.showSkillIntro(e, data.skillDesc); });
+                        skillEl.addEventListener('mouseleave', () => { this.hideSkillIntro(); });
+                    }
+                    
+                    card.addEventListener('mousedown', (e) => this.startLongPress(emoji, card));
+                    card.addEventListener('mouseup', () => this.endLongPress());
+                    card.addEventListener('mouseleave', () => this.endLongPress());
+                    card.addEventListener('touchstart', (e) => { e.preventDefault(); this.startLongPress(emoji, card); });
+                    card.addEventListener('touchend', () => this.endLongPress());
+                    
+                    grid.appendChild(card);
+                }
+            }
+            
+            startLongPress(emoji, card) {
+                if (card.classList.contains('disabled')) return;
+                this.buy(emoji);
+                this.longPressTarget = emoji;
+                let speed = 200;
+                
+                const buyLoop = () => {
+                    if (!this.longPressTarget) return;
+                    if (this.buy(emoji)) {
+                        document.getElementById('buyHint').classList.add('show');
+                        speed = Math.max(50, speed * 0.9);
+                        this.longPressTimer = setTimeout(buyLoop, speed);
+                    } else {
+                        this.endLongPress();
+                    }
+                };
+                
+                this.longPressTimer = setTimeout(buyLoop, 400);
+            }
+            
+            endLongPress() {
+                this.longPressTarget = null;
+                if (this.longPressTimer) {
+                    clearTimeout(this.longPressTimer);
+                    this.longPressTimer = null;
+                }
+                document.getElementById('buyHint').classList.remove('show');
+            }
+            
+            buy(emoji) {
+                if (this.army.length >= 100) return false;
+                let price = TIER_PRICES[ANIMAL_DB[emoji].tier];
+                if (this.money >= price) {
+                    this.money -= price;
+                    this.army.push(emoji);
+                    this.updateShopUI();
+                    return true;
+                }
+                return false;
+            }
+            
+            sell(index) {
+                let currentIdx = 0;
+                for (let i = 0; i < this.armyStackData.length; i++) {
+                    let stack = this.armyStackData[i];
+                    if (index >= currentIdx && index < currentIdx + stack.count) {
+                        let emoji = stack.emoji;
+                        let price = TIER_PRICES[ANIMAL_DB[emoji].tier];
+                        this.money += Math.floor(price / 2);
+                        
+                        for (let j = this.army.length - 1; j >= 0; j--) {
+                            if (this.army[j] === emoji) {
+                                this.army.splice(j, 1);
+                                break;
+                            }
+                        }
+                        this.updateShopUI();
+                        return;
+                    }
+                    currentIdx += stack.count;
+                }
+            }
+            
+            updateShopUI() {
+                document.getElementById('moneyDisplay').textContent = this.money;
+                document.getElementById('armyCount').textContent = this.army.length;
+                
+                document.querySelectorAll('.animal-card').forEach(card => {
+                    let emoji = card.dataset.emoji;
+                    let price = TIER_PRICES[ANIMAL_DB[emoji].tier];
+                    if (this.money < price || this.army.length >= 100) {
+                        card.classList.add('disabled');
+                    } else {
+                        card.classList.remove('disabled');
+                    }
+                });
+                
+                this.updateArmyStack();
+            }
+            
+            updateArmyStack() {
+                const stackDiv = document.getElementById('armyStack');
+                stackDiv.innerHTML = '';
+                
+                let counts = {};
+                this.army.forEach(e => { counts[e] = (counts[e] || 0) + 1; });
+                
+                this.armyStackData = [];
+                let index = 0;
+                
+                let sortedEmojis = Object.keys(counts).sort((a, b) => ANIMAL_DB[a].tier - ANIMAL_DB[b].tier);
+                
+                sortedEmojis.forEach(emoji => {
+                    let count = counts[emoji];
+                    let data = ANIMAL_DB[emoji];
+                    
+                    this.armyStackData.push({emoji, count, data});
+                    
+                    let item = document.createElement('div');
+                    item.className = 'stack-item';
+                    
+                    item.innerHTML = `
+                        <div class="stack-emoji">${emoji}</div>
+                        <div class="stack-info">
+                            <div class="stack-name">${data.name}</div>
+                            <div style="font-size: 10px; color: #666;">📏${data.range} ${data.skill || ''}</div>
+                        </div>
+                        <div class="stack-count">×${count}</div>
+                    `;
+                    
+                    item.oncontextmenu = (e) => { e.preventDefault(); this.sell(index); };
+                    
+                    stackDiv.appendChild(item);
+                    index += count;
+                });
+            }
+            
+            setDeployMode(mode) {
+                this.deployMode = mode;
+                document.getElementById('btnAuto').classList.toggle('active', mode === 'auto');
+                document.getElementById('btnManual').classList.toggle('active', mode === 'manual');
+            }
+            
+            startBattle() {
+                if (this.army.length === 0 && this.deployedUnits.length === 0) return;
+                
+                if (this.deployMode === 'manual' && this.state !== 'deploy') {
+                    this.state = 'deploy';
+                    document.getElementById('shopScreen').style.display = 'none';
+                    document.getElementById('deployScreen').style.display = 'flex';
+                    this.deployCanvas.height = window.innerHeight - 160;
+                    this.resize();
+                    this.updateDeployPanel();
+                    this.drawDeploy();
+                    this.checkCanStartBattle();
+                    return;
+                }
+                
+                let allUnits = [...this.deployedUnits];
+                if (this.army.length > 0 && this.deployMode === 'manual') {
+                    this.army.forEach((emoji, i) => {
+                        allUnits.push({
+                            emoji: emoji,
+                            x: 80 + Math.random() * 100,
+                            y: 150 + (i / Math.max(this.army.length, 1)) * (window.innerHeight - 300)
+                        });
+                    });
+                    this.army = [];
+                }
+                
+                document.getElementById('shopScreen').style.display = 'none';
+                document.getElementById('deployScreen').style.display = 'none';
+                document.getElementById('battleScreen').style.display = 'block';
+                document.getElementById('cursorAnimal').style.display = 'none';
+                
+                this.units = [];
+                this.enemyUnits = [];
+                this.projectiles = [];
+                this.areaEffects = [];
+                this.effects = [];
+                
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+                const topMargin = h * 0.25;
+                const availableHeight = h - topMargin - 100;
+                
+                if (this.deployMode === 'manual' && allUnits.length > 0) {
+                    allUnits.forEach((u) => {
+                        this.units.push(new Unit(u.emoji, 'left', u.x, u.y, true));
+                    });
+                } else {
+                    this.army.forEach((emoji, i) => {
+                        let y = topMargin + (i / Math.max(this.army.length, 1)) * availableHeight + (Math.random() - 0.5) * 50;
+                        let x = 80 + Math.random() * 50;
+                        this.units.push(new Unit(emoji, 'left', x, y, true));
+                    });
+                }
+                
+                let totalValue = this.units.reduce((sum, u) => sum + TIER_PRICES[u.data.tier], 0);
+                let enemyBudget = Math.floor(totalValue * (0.9 + Math.random() * 0.2));
+                let enemyArmy = [];
+                let currentCost = 0;
+                
+                while (currentCost < enemyBudget && enemyArmy.length < 100) {
+                    let candidates = Object.keys(ANIMAL_DB);
+                    let choice = candidates[Math.floor(Math.random() * candidates.length)];
+                    let cost = TIER_PRICES[ANIMAL_DB[choice].tier];
+                    if (currentCost + cost <= enemyBudget) {
+                        enemyArmy.push(choice);
+                        currentCost += cost;
+                    }
+                }
+                
+                enemyArmy.forEach((emoji, i) => {
+                    let y = topMargin + (i / Math.max(enemyArmy.length, 1)) * availableHeight + (Math.random() - 0.5) * 50;
+                    let x = w - 80 - Math.random() * 50;
+                    this.enemyUnits.push(new Unit(emoji, 'right', x, y, true));
+                });
+                
+                this.state = 'battle';
+                this.winner = null;
+                this.battleStartTime = Date.now();
+                this.lastTime = performance.now();
+                requestAnimationFrame((t) => this.loop(t));
+            }
+            
+            drawDeploy() {
+                const ctx = this.deployCtx;
+                const w = this.deployCanvas.width;
+                const h = this.deployCanvas.height;
+                
+                ctx.clearRect(0, 0, w, h);
+                
+                let grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, '#87CEEB');
+                grad.addColorStop(0.5, '#E0F6FF');
+                grad.addColorStop(1, '#90EE90');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+                
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.08)';
+                ctx.fillRect(w * 0.45, 0, w * 0.55, h);
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([15, 10]);
+                ctx.beginPath();
+                ctx.moveTo(w * 0.45, 0);
+                ctx.lineTo(w * 0.45, h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#666';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('👈 我方区域（可放置）', w * 0.22, 40);
+                ctx.fillStyle = '#999';
+                ctx.fillText('敌方区域 👉', w * 0.72, 40);
+                
+                this.deployedUnits.forEach(u => {
+                    ctx.font = '35px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(u.emoji, u.x, u.y);
+                    
+                    if (u.emoji === this.selectedAnimal) {
+                        ctx.strokeStyle = '#ff69b4';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(u.x, u.y, 25, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                });
+            }
+            
+            clearDeploy() {
+                this.deployedUnits.forEach(u => { this.army.push(u.emoji); });
+                this.deployedUnits = [];
+                this.selectedAnimal = null;
+                this.drawDeploy();
+                this.updateDeployPanel();
+                this.checkCanStartBattle();
+            }
+            
+            backToShop() {
+                this.deployedUnits.forEach(u => { this.army.push(u.emoji); });
+                this.deployedUnits = [];
+                this.state = 'shop';
+                document.getElementById('deployScreen').style.display = 'none';
+                document.getElementById('shopScreen').style.display = 'flex';
+                document.getElementById('cursorAnimal').style.display = 'none';
+                this.selectedAnimal = null;
+                this.updateShopUI();
+            }
+            
+            loop(timestamp) {
+                if (this.state !== 'battle') return;
+                
+                let dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
+                this.lastTime = timestamp;
+                
+                // 更新计时器
+                let elapsed = (Date.now() - this.battleStartTime) / 1000;
+                let remaining = Math.max(0, BATTLE_TIME_LIMIT - elapsed);
+                document.getElementById('timerDisplay').textContent = `⏱️ ${Math.ceil(remaining)}s`;
+                
+                this.update(dt);
+                this.draw();
+                
+                // 清理死亡单位
+                this.units = this.units.filter(u => u.alive || u.deathAnim <= 0.5);
+                this.enemyUnits = this.enemyUnits.filter(u => u.alive || u.deathAnim <= 0.5);
+                
+                let leftAlive = this.units.filter(u => u.alive).length;
+                let rightAlive = this.enemyUnits.filter(u => u.alive).length;
+                
+                document.getElementById('leftCount').textContent = leftAlive;
+                document.getElementById('rightCount').textContent = rightAlive;
+                
+                // 检查结束条件
+                let shouldEnd = false;
+                
+                // 1. 一方全灭
+                if (leftAlive === 0 || rightAlive === 0) {
+                    if (leftAlive > 0) this.winner = 'left';
+                    else if (rightAlive > 0) this.winner = 'right';
+                    else this.winner = 'draw';
+                    shouldEnd = true;
+                }
+                
+                // 2. 时间到
+                if (remaining <= 0) {
+                    if (leftAlive > rightAlive) {
+                        this.winner = 'left';
+                    } else if (rightAlive > leftAlive) {
+                        this.winner = 'right';
+                    } else {
+                        this.winner = 'draw';
+                    }
+                    shouldEnd = true;
+                }
+                
+                if (shouldEnd) {
+                    setTimeout(() => this.showResult(), 1000);
+                    return;
+                }
+                
+                requestAnimationFrame((t) => this.loop(t));
+            }
+            
+            update(dt) {
+                for (let u of this.units) u.update(dt, this.enemyUnits, this.projectiles, this.areaEffects);
+                for (let u of this.enemyUnits) u.update(dt, this.units, this.projectiles, this.areaEffects);
+                for (let p of this.projectiles) p.update();
+                this.projectiles = this.projectiles.filter(p => p.alive);
+                this.areaEffects = this.areaEffects.filter(e => e.update(dt));
+                
+                this.effects = this.effects.filter(e => {
+                    e.life -= dt;
+                    e.y -= 40 * dt;
+                    return e.life > 0;
+                });
+            }
+            
+            draw() {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+                
+                let grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, '#87CEEB');
+                grad.addColorStop(0.5, '#E0F6FF');
+                grad.addColorStop(1, '#90EE90');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+                
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([15, 10]);
+                ctx.beginPath();
+                ctx.moveTo(w/2, h * 0.25);
+                ctx.lineTo(w/2, h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                for (let e of this.areaEffects) e.draw(ctx);
+                
+                let allUnits = [...this.units, ...this.enemyUnits];
+                allUnits.sort((a, b) => {
+                    if (a.data.tier !== b.data.tier) return a.data.tier - b.data.tier;
+                    return a.y - b.y;
+                });
+                
+                for (let p of this.projectiles) p.draw(ctx);
+                for (let u of allUnits) u.draw(ctx);
+                
+                ctx.font = "bold 22px Arial";
+                ctx.textAlign = "center";
+                for (let e of this.effects) {
+                    let alpha = Math.min(1, e.life);
+                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+                    ctx.strokeStyle = `rgba(0,0,0,${alpha})`;
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(e.text, e.x, e.y);
+                    ctx.fillText(e.text, e.x, e.y);
+                }
+            }
+            
+            addEffect(x, y, text, duration = 1.0) {
+                this.effects.push({x, y, text, life: duration});
+            }
+            
+            addDamageNumber(x, y, dmg, isBig = false) {
+                let text = dmg.toString();
+                if (isBig) text += '!';
+                this.effects.push({x: x + (Math.random()-0.5)*20, y, text: text, life: 0.8});
+            }
+            
+            showResult() {
+                document.getElementById('resultScreen').style.display = 'flex';
+                let title, sub;
+                
+                if (this.winner === 'left') {
+                    title = '🏆 胜利!';
+                    let reward = Math.floor(this.units.reduce((sum, u) => sum + TIER_PRICES[u.data.tier], 0) / 4);
+                    sub = `友军全胜! 获得战利品 ${reward} 金币`;
+                } else if (this.winner === 'right') {
+                    title = '💀 失败...';
+                    sub = '你的军团被消灭了';
+                } else {
+                    title = '🤝 平局';
+                    sub = '双方势均力敌，难分胜负';
+                }
+                
+                document.getElementById('resultTitle').textContent = title;
+                document.getElementById('resultSub').textContent = sub;
+            }
+        }
+
+        const game = new Game();
+    </script>
+</body>
+</html>
