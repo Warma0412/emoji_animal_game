@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⚔️ Emoji Battle Arena - 动物斗兽场</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 开始画面 -->
+        <div id="startScreen">
+            <h1>⚔️ Emoji Battle Arena</h1>
+            <p class="subtitle">收集动物 · 组建军团 · 策略对战</p>
+
+            <div class="gold-selector">
+                <div class="selector-label">💰 金币模式</div>
+                <div class="selector-options">
+                    <button class="gold-option active" data-gold="random">🎲 随机</button>
+                    <button class="gold-option" data-gold="poor">🪙 贫穷</button>
+                    <button class="gold-option" data-gold="normal">💰 普通</button>
+                    <button class="gold-option" data-gold="rich">💎 富裕</button>
+                    <button class="gold-option" data-gold="tycoon">👑 富豪</button>
+                </div>
+            </div>
+
+            <div class="class-legend">
+                <span class="legend-item"><span class="legend-dot class-远程"></span>🏹远程</span>
+                <span class="legend-item"><span class="legend-dot class-肉盾"></span>🛡️肉盾</span>
+                <span class="legend-item"><span class="legend-dot class-战士"></span>⚔️战士</span>
+                <span class="legend-item"><span class="legend-dot class-刺客"></span>🗡️刺客</span>
+                <span class="legend-item"><span class="legend-dot class-神兽"></span>👑神兽</span>
+            </div>
+
+            <div class="start-buttons">
+                <button class="btn game-mode-btn" id="btnNewGame">🎮 经典模式</button>
+                <button class="btn game-mode-btn survival-btn" id="btnSurvival">🌊 生存模式</button>
+            </div>
+            <div class="mode-descs">
+                <span class="mode-desc">随机金币对战</span>
+                <span class="mode-desc">波次递增挑战</span>
+            </div>
+            <div class="sound-toggle" id="soundToggle">🔊 音效</div>
+        </div>
+
+        <!-- 商店画面 -->
+        <div id="shopScreen">
+            <div id="shopHeader">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px; font-weight: bold;">🛒 动物商店</span>
+                    <span id="moneyTier" class="money-tier"></span>
+                    <span id="gameModeTag" class="game-mode-tag" style="display:none;"></span>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div class="stat-box">💰 <span id="moneyDisplay">0</span></div>
+                    <div class="stat-box">⚔️ <span id="armyCount">0</span>/100</div>
+                </div>
+            </div>
+            <div id="shopContent">
+                <div id="animalGrid"></div>
+                <div id="armyPanel">
+                    <div class="deploy-buttons">
+                        <button class="deploy-btn active" id="btnAuto">自动部署</button>
+                        <button class="deploy-btn" id="btnManual">手动部署</button>
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 10px; text-align: center;">
+                        点击购买 · 右键出售 · 长按连买
+                    </div>
+                    <div id="armyStack"></div>
+                    <button class="btn" id="btnBattle" style="margin-top: 10px; padding: 12px; font-size: 16px; width: 100%;">⚔️ 开始战斗</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 部署画面 -->
+        <div id="deployScreen">
+            <div class="deploy-header">
+                <div>🎮 手动部署模式</div>
+                <div style="font-size: 13px; color: #666; margin-top: 3px;">选中动物后按住鼠标拖动可快速放置</div>
+            </div>
+            <div class="deploy-controls-top">
+                <button class="btn secondary" id="btnClearDeploy">🗑️ 清空</button>
+                <button class="btn" id="btnBackToShop">↩️ 返回</button>
+                <button class="btn" id="btnStartBattle" disabled>⚔️ 开始战斗</button>
+            </div>
+            <div class="deploy-hint" id="deployHint">点击下方选择动物，在左侧区域点击放置</div>
+            <div class="empty-hint" id="emptyHint">请在下方选择动物后<br>在左侧战场区域点击放置</div>
+            <canvas id="deployCanvas"></canvas>
+            <div class="deploy-panel">
+                <div class="panel-header">
+                    <div class="panel-title">🎒 选择要部署的动物</div>
+                    <div class="panel-stats">
+                        <span>已放置: <b id="placedCount">0</b></span>
+                        <span>待部署: <b id="remainingCount">0</b></span>
+                    </div>
+                </div>
+                <div class="animals-pool" id="animalsPool"></div>
+            </div>
+        </div>
+
+        <!-- 战斗画面 -->
+        <div id="battleScreen">
+            <canvas id="battleCanvas"></canvas>
+            <div id="battleUI">
+                <div class="team-stat left-team"><span>友军: <span id="leftCount">0</span></span></div>
+                <div style="color: #333;">VS</div>
+                <div class="team-stat right-team"><span>敌军: <span id="rightCount">0</span></span></div>
+            </div>
+            <div id="timerDisplay">⏱️ 60s</div>
+            <div id="waveDisplay">🌊 第 <span id="waveNumber">1</span> 波</div>
+            <div id="speedControl">
+                <button class="speed-btn active" data-speed="1">1x</button>
+                <button class="speed-btn" data-speed="2">2x</button>
+                <button class="speed-btn" data-speed="3">3x</button>
+            </div>
+            <div id="resultScreen">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="result-sub" id="resultSub"></div>
+                <div class="result-buttons">
+                    <button class="btn survival-next-btn" id="btnNextWave" style="display:none;">🌊 下一波</button>
+                    <button class="btn" id="btnReplay">🔄 再来一局</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="buying-hint" id="buyHint">快速购买中...</div>
+    <div class="skill-intro" id="skillIntro"></div>
+    <div class="cursor-animal" id="cursorAnimal"></div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "emoji-battle-arena",
+  "version": "2.0.0",
+  "description": "Emoji Battle Arena - 动物斗兽场",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "author": "",
+  "license": "MIT"
+}
